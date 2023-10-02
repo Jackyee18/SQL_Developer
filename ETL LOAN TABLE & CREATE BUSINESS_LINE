@@ -1,0 +1,45 @@
+INSERT INTO CHITIETDUNO (REPORTING_DATE, BRANCH_NO, BUSINESS_LINE, CURRENCY, NHOMNO, DUNO_QD)
+WITH A AS (
+SELECT
+    SYM_RUN_DATE, MACN, LOAITIEN_VAY, SUBSTR(MTK_DINHLUONG,1,1) AS NHOM_NO, 
+    CASE
+        WHEN GLCODE_TONGHOP LIKE '120%' OR
+             GLCODE_TONGHOP LIKE '113%' THEN
+            CASE
+                WHEN MACN IN (179, 322) THEN 'Trading'
+                ELSE 'Banking' 
+            END
+        WHEN GLCODE_TONGHOP LIKE '121%' OR GLCODE_TONGHOP LIKE '122%' OR
+             GLCODE_TONGHOP LIKE '123%' OR GLCODE_TONGHOP LIKE '124%' OR
+             GLCODE_TONGHOP LIKE '125%' OR GLCODE_TONGHOP LIKE '126%' OR
+             GLCODE_TONGHOP LIKE '127%' THEN
+            CASE
+                WHEN MACN = 324 THEN 'THE'
+                WHEN MACN = 668 THEN 'MUADEE'
+                WHEN MACN IN (166, 188, 666, 688) THEN 'CIB'
+                ELSE
+                    CASE
+                        WHEN MACN NOT IN (324, 166, 188, 666, 688, 668) THEN
+                            CASE
+                                WHEN MUCDICH_VAY = 'TD-The tin dung' AND
+                                    GLCODE_TONGHOP LIKE '1275%' THEN 'THE'
+                                WHEN LOAIKH IN ('DCO', 'FCO', 'DFI') AND 
+                                    MAJOR_CATEGORY = 'BC' THEN 'CIB'
+                                WHEN LOAIKH IN ('DCO', 'FCO', 'DFI') AND 
+                                    MAJOR_CATEGORY <> 'BC' AND
+                                    PROFIT_CENTRE = '208' THEN 'CN'
+                                WHEN LOAIKH IN ('DCO', 'FCO', 'DFI') AND
+                                    MAJOR_CATEGORY <> 'BC' AND
+                                    PROFIT_CENTRE <> '208' THEN 'SME'
+                                WHEN LOAIKH IN ('DIN', 'FIN') THEN 'CN'
+                            END
+                        ELSE ''
+                    END
+            END
+        ELSE ''
+    END AS BUSINESS_LINE,
+    DUNO_QD/1000000000 AS DUNO_QD
+FROM CHOVAY)
+SELECT SYM_RUN_DATE AS REPORTING_DATE, MACN AS BRANCH_NO, LOAITIEN_VAY AS CURRENCY, NHOM_NO, BUSINESS_LINE, SUM(DUNO_QD) AS DUNO_QD
+FROM A
+GROUP BY SYM_RUN_DATE, MACN, LOAITIEN_VAY, NHOM_NO, BUSINESS_LINE;
